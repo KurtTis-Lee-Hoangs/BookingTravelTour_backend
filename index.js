@@ -9,23 +9,18 @@ import authRoute from "./routes/auth.js";
 import reviewRoute from "./routes/reviews.js";
 import bookingRoute from "./routes/bookings.js";
 import blogRoute from "./routes/blogs.js";
-import servicesRoute from "./routes/services.js"
-import hotelRoute from "./routes/hotel.js"
+import servicesRoute from "./routes/services.js";
+import hotelRoute from "./routes/hotel.js";
 import uploadRoute from "./routes/uploadImage.js";
+import chatRoute from "./routes/chat.js";
+import { app, server } from "./config/socket.io.js";
 
 dotenv.config();
-const app = express();
-const port = process.env.PORT || 8000;
+const port = process.env.PORT || 4000;
 const corsOptions = {
   origin: true,
   credentials: true,
 };
-
-// for testing
-// app.get('/', (req, res) => {
-//     res.send('API is working');
-// });
-
 // database connection
 mongoose.set("strictQuery", false);
 const conect = async () => {
@@ -39,12 +34,12 @@ const conect = async () => {
   } catch (err) {
     console.error("Error connecting to database:", err);
   }
-};
+};  
 
 // middleware
 app.use(express.json());
-app.use(cors(corsOptions));
 app.use(cookieParser());
+app.use(cors(corsOptions));
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/tours", tourRoute);
 app.use("/api/v1/users", userRoute);
@@ -52,11 +47,11 @@ app.use("/api/v1/review", reviewRoute);
 app.use("/api/v1/bookings", bookingRoute);
 app.use("/api/v1/blogs", blogRoute);
 app.use("/api/v1/services", servicesRoute);
-app.use("/api/v1/hotels", hotelRoute)
+app.use("/api/v1/hotels", hotelRoute);
 app.use("/api/v1/uploads", uploadRoute);
+app.use("/api/v1/chat", chatRoute);
 
-
-app.listen(port, () => {
+server.listen(port, () => {
   conect();
   console.log(`Server is running on port ${port}`);
 });
