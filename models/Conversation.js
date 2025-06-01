@@ -14,7 +14,7 @@ const conversationSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: "Message", // Assuming you have a Message model
         default: [],
-      },ssssssssssssssssss
+      },
     ],
   },
   { timestamps: true }
