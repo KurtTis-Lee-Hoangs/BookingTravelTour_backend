@@ -1,8 +1,8 @@
 import express from 'express';
-import { getTourByKeywords } from '../utils/chatBot.js';
+import {handleChatRequest } from '../utils/chatBot.js';
 const router = express.Router();
 
 
-router.post('/chatbot', getTourByKeywords)
+router.post('/chatbot', handleChatRequest)
 
 export default router;
