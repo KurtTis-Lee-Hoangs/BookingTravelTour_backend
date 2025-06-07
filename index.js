@@ -37,7 +37,7 @@ const conect = async () => {
 };  
 
 // middleware
-app.use(express.json());
+app.use(express.json({limit: "10mb"}));
 app.use(cookieParser());
 app.use(cors(corsOptions));
 app.use("/api/v1/auth", authRoute);
