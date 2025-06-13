@@ -130,6 +130,29 @@ export const getAllTourByUser = async (req, res) => {
   }
 };
 
+// get similar tour
+export const getSimilarTour = async (req, res) => {
+  // pagianaion
+  const page = parseInt(req.query.page);
+
+  try {
+    const tours = await Tour.find({isDelete: false})
+      .populate("reviews")
+
+    res.status(200).json({
+      success: true,
+      count: tours.length,
+      message: "Sussessfully get similar tours",
+      data: tours,
+    });
+  } catch (err) {
+    res.status(404).json({
+      success: false,
+      message: "Not found the tours. Try again",
+    });
+  }
+};
+
 // Get all tour by admin
 export const getAllTourByAdminNoDelete = async (req, res) => {
   // pagianaion

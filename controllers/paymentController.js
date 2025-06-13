@@ -37,7 +37,7 @@ export const payment = async (orderId, type) => {
     description: `Payment for the order #${transID}`,
     bank_code: "",
     callback_url:
-      "https://b38d-14-169-70-201.ngrok-free.app/api/v1/bookings/callback",
+      "https://d0b6-14-169-14-104.ngrok-free.app/api/v1/bookings/callback",
   };
   const data =
     configPayment.app_id +
@@ -96,7 +96,7 @@ export const callback = async (req, res) => {
         await HotelRoom.findByIdAndUpdate(
           booking.hotelRoomId,
           {
-            status: "Unvavailable",
+            status: "Unavailable",
           },
           { new: true }
         );
