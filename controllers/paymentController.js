@@ -5,6 +5,7 @@ import configPayment from "../config/configPayment.js";
 import axios from "axios";
 import { sendPaymentConfirmationEmail } from "../utils/sendEmail.js";
 import BookingHotel from "../models/BookingHotel.js";
+import HotelRoom from "../models/HotelRoom.js";
 export const payment = async (orderId, type) => {
   const embed_data = {
     redirecturl: "http://localhost:3000/thankyou",
