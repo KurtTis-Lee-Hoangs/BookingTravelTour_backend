@@ -242,3 +242,157 @@ export const sendHotelBookingConfirmationEmail = async (userEmail, bookingDetail
     // Chỉ ghi log lỗi là đủ trong nhiều trường hợp.
   }
 };
+
+export const sendBookingRequestToStaff = async (requestDetails) => {
+  // Destructure các thông tin cần thiết
+  const { fullName, phone, travelDate, tourName, userEmail } = requestDetails;
+
+  // Định dạng lại ngày đi cho dễ đọc
+  const formattedTravelDate = new Date(travelDate).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+  // 1. TẠO TRANSPORTER
+  const transporter = nodemailer.createTransport({
+    service: "Gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_PASS,
+    },
+  });
+
+  // 2. TẠO NỘI DUNG EMAIL GỬI ĐẾN NHÂN VIÊN
+  const mailOptions = {
+    from: `"Hệ thống TravelWorld" <${process.env.GMAIL_USER}>`,
+    to: "nhanhuynhly244@gmail.com", // << EMAIL CỦA NHÂN VIÊN
+    subject: `🔔 Yêu cầu Đặt Tour Mới: Khách hàng quan tâm tour "${tourName}"`, // Tiêu đề email cho nhân viên
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <div style="text-align: center; border-bottom: 2px solid #ff9800; padding-bottom: 10px; margin-bottom: 20px;">
+          <h1 style="color: #ff9800; margin: 0;">Yêu Cầu Đặt Tour Mới</h1>
+        </div>
+        
+        <p style="font-size: 16px;">Có một khách hàng vừa gửi yêu cầu đặt tour từ website. Vui lòng xử lý sớm.</p>
+        
+        <h3 style="color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px;">Thông tin khách hàng:</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+          <tr style="background-color: #f9f9f9;">
+            <td style="padding: 10px; border: 1px solid #e0e0e0; font-weight: bold; width: 40%;">Tên khách hàng:</td>
+            <td style="padding: 10px; border: 1px solid #e0e0e0;">${fullName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #e0e0e0; font-weight: bold;">Số điện thoại:</td>
+            <td style="padding: 10px; border: 1px solid #e0e0e0;">${phone}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #e0e0e0; font-weight: bold;">Email liên hệ:</td>
+            <td style="padding: 10px; border: 1px solid #e0e0e0;">${userEmail}</td>
+          </tr>
+        </table>
+
+        <h3 style="color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 25px;">Chi tiết yêu cầu:</h3>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+           <tr style="background-color: #f9f9f9;">
+            <td style="padding: 10px; border: 1px solid #e0e0e0; font-weight: bold; width: 40%;">Tour quan tâm:</td>
+            <td style="padding: 10px; border: 1px solid #e0e0e0;"><strong>${tourName}</strong></td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #e0e0e0; font-weight: bold;">Ngày đi mong muốn:</td>
+            <td style="padding: 10px; border: 1px solid #e0e0e0;">${formattedTravelDate}</td>
+          </tr>
+        </table>
+        
+        <p style="font-size: 16px; margin-top: 25px; font-style: italic;">Vui lòng liên hệ với khách hàng qua số điện thoại hoặc email trên để xác nhận và hoàn tất thủ tục đặt tour.</p>
+      </div>
+    `,
+  };
+
+  // 3. GỬI MAIL VÀ XỬ LÝ LỖI
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Email yêu cầu đặt tour đã được gửi tới nhân viên thành công!`);
+  } catch (error) {
+    console.error("Lỗi khi gửi email đến nhân viên:", error);
+    throw new Error("Gửi email thất bại");
+  }
+};
+
+export const sendBookingConfirmedEmail = async (bookingDetails, paymentUrl) => {
+  // Destructure các thông tin cần thiết
+  const { userEmail, fullName, tourName, guestSize, totalPrice, bookAt } = bookingDetails;
+
+  // Định dạng ngày và tiền tệ cho đẹp
+  const formattedBookAt = new Date(bookAt).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  const formattedTotalPrice = totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+
+  // 1. TẠO TRANSPORTER
+  const transporter = nodemailer.createTransport({
+    service: "Gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_PASS,
+    },
+  });
+
+  // 2. TẠO NỘI DUNG EMAIL
+  const mailOptions = {
+    from: `"TravelWorld" <${process.env.GMAIL_USER}>`,
+    to: userEmail,
+    subject: `Yêu cầu đặt tour của bạn đã được xác nhận!`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <div style="text-align: center; border-bottom: 2px solid #28a745; padding-bottom: 10px; margin-bottom: 20px;">
+          <h1 style="color: #28a745; margin: 0;">Yêu cầu được xác nhận</h1>
+        </div>
+        
+        <p style="font-size: 16px;">Xin chào <strong style="color: #28a745;">${fullName}</strong>,</p>
+        <p style="font-size: 16px;">Chúng tôi vui mừng thông báo rằng yêu cầu đặt tour <strong>"${tourName}"</strong> của bạn đã được nhân viên của chúng tôi xác nhận. Vui lòng xem lại thông tin dưới đây và tiến hành thanh toán để hoàn tất việc đặt vé.</p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+          <tr style="background-color: #f9f9f9;">
+            <td style="padding: 12px; border: 1px solid #e0e0e0; font-weight: bold; width: 35%;">Tên tour</td>
+            <td style="padding: 12px; border: 1px solid #e0e0e0;">${tourName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e0e0e0; font-weight: bold;">Số lượng khách</td>
+            <td style="padding: 12px; border: 1px solid #e0e0e0;">${guestSize}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e0e0e0; font-weight: bold;">Ngày đi</td>
+            <td style="padding: 12px; border: 1px solid #e0e0e0;">${formattedBookAt}</td>
+          </tr>
+          <tr style="background-color: #f9f9f9;">
+            <td style="padding: 12px; border: 1px solid #e0e0e0; font-weight: bold;">Tổng chi phí</td>
+            <td style="padding: 12px; border: 1px solid #e0e0e0; color: #dc3545; font-weight: bold;">${formattedTotalPrice}</td>
+          </tr>
+        </table>
+        
+        <div style="text-align: center; margin-top: 30px;">
+          <p style="font-size: 16px; margin-top: 20px;">Để hoàn tất, vui lòng nhấn vào nút bên dưới để thanh toán:</p>
+          <a href="${paymentUrl}" style="display: inline-block; background-color: #007bff; color: white; padding: 14px 28px; text-decoration: none; border-radius: 5px; font-size: 18px; font-weight: bold;">Thanh toán ngay</a>
+          <p style="font-size: 12px; color: #777; margin-top: 10px;">(Link thanh toán sẽ hết hạn trong vòng 24 giờ)</p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; border-top: 1px solid #e0e0e0; padding-top: 20px;">
+          <p style="font-size: 14px; color: #777;">Trân trọng,<br>Đội ngũ TravelWorld</p>
+        </div>
+      </div>
+    `,
+  };
+  
+  // 3. GỬI MAIL
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Email xác nhận và yêu cầu thanh toán đã gửi tới ${userEmail}!`);
+  } catch (error) {
+    console.error("Lỗi khi gửi email xác nhận cho khách hàng:", error);
+    // Không throw lỗi ở đây để không làm gián đoạn luồng chính trả về URL cho frontend
+    // Việc gửi email thất bại sẽ được ghi nhận ở log để xử lý sau.
+  }
+};

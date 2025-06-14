@@ -39,6 +39,11 @@ const bookingSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    status: {
+      type: String,
+      enum: ["Waiting", "Paiding", "Cancelled", "Completed"],
+      default: "Waiting",
+    },
     isDelete: { type: Boolean, default: false },
     typeBooking: {
       type: String,

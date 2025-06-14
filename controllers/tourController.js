@@ -1,5 +1,5 @@
 import Tour from "../models/Tour.js";
-
+import Booking from "../models/Booking.js";
 // Create a new tour
 export const createTour = async (req, res) => {
   const newTour = new Tour(req.body);
