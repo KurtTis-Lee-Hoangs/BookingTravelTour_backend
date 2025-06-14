@@ -15,7 +15,8 @@ import {
   getAllBookingHotel,
   getTotalAllBookingHotel,
   updateBookingHotel,
-  deleteBookingHotel
+  deleteBookingHotel,
+  checkoutBookingHotel
 } from "../controllers/hotelController.js";
 
 import {
@@ -50,5 +51,6 @@ router.get("/admin/getAllBookingHotel", verifyAdmin, getAllBookingHotel);
 router.get("/admin/getTotalAllBookingHotel", verifyAdmin, getTotalAllBookingHotel);
 router.put("/admin/updateBookingHotel/:id", verifyAdmin, updateBookingHotel);
 router.delete("/admin/deleteBookingHotel/:id", verifyAdmin, deleteBookingHotel);
+router.put("/admin/checkoutBookingHotel/:id", verifyAdmin, checkoutBookingHotel);
 
 export default router;

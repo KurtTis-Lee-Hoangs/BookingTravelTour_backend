@@ -36,6 +36,7 @@ const bookingHotelSchema = new mongoose.Schema(
       default: false,
     },
     isDelete: { type: Boolean, default: false },
+    isCheckout: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

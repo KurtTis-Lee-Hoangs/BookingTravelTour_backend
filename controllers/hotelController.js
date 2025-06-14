@@ -456,3 +456,33 @@ export const deleteBookingHotel = async (req, res) => {
     });
   }
 };
+
+export const checkoutBookingHotel = async (req, res) => {
+  const bookingId = req.params.id;
+
+  try {
+    const checkoutBooking = await BookingHotel.findByIdAndUpdate(
+      bookingId,
+      { isCheckout: true },
+      { new: true }
+    );
+
+    if (!checkoutBooking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Checkout successfully",
+      data: checkoutBooking,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to Checkout",
+    });
+  }
+};
