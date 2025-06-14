@@ -11,6 +11,16 @@ const bookingHotelSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    fullName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    phoneNumber: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     checkInDate: {
       type: Date,
       required: true,

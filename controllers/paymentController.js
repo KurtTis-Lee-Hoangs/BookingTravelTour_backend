@@ -3,22 +3,25 @@ import moment from "moment";
 import CryptoJS from "crypto-js";
 import configPayment from "../config/configPayment.js";
 import axios from "axios";
-import { sendPaymentConfirmationEmail } from "../utils/sendEmail.js";
+import {
+  sendHotelBookingConfirmationEmail,
+  sendPaymentConfirmationEmail,
+} from "../utils/sendEmail.js";
 import BookingHotel from "../models/BookingHotel.js";
-import HotelRoom from "../models/HotelRoom.js";
+
 export const payment = async (orderId, type) => {
   const embed_data = {
     redirecturl: "http://localhost:3000/thankyou",
-    type: type
+    type: type,
   };
   let orderInfo;
   if (type === "roomBooking") {
-    orderInfo = await BookingHotel.findById(orderId)
+    orderInfo = await BookingHotel.findById(orderId);
     if (!orderInfo) {
-      throw new Error("Order room not found")
+      throw new Error("Order room not found");
     }
   }
-  
+
   if (type === "tourBooking") {
     orderInfo = await Booking.findById(orderId);
     if (!orderInfo) {
@@ -38,7 +41,7 @@ export const payment = async (orderId, type) => {
     description: `Payment for the order #${transID}`,
     bank_code: "",
     callback_url:
-      "https://d0b6-14-169-14-104.ngrok-free.app/api/v1/bookings/callback",
+      "https://f4e4-2402-800-62a6-d645-1e0-7009-3179-7139.ngrok-free.app/api/v1/bookings/callback",
   };
   const data =
     configPayment.app_id +
@@ -88,20 +91,75 @@ export const callback = async (req, res) => {
       const { type } = JSON.parse(dataJson.embed_data);
       let booking;
       if (type === "roomBooking") {
-        booking = await BookingHotel.findOneAndUpdate(
-          { _id: dataJson["app_user"] },
-          { isPayment: true },
-          { new: true }
-        );
+        try {
+          // BƯỚC 1: Cập nhật trạng thái thanh toán của booking.
+          // Chúng ta chỉ cần ID ở đây, không cần lấy lại toàn bộ document ngay.
+          const updatedBooking = await BookingHotel.findByIdAndUpdate(
+            dataJson["app_user"], // Đây là bookingId
+            { isPayment: true, status: "Confirmed" }, // Cập nhật cả status
+            { new: true } // new: true để trả về document sau khi đã cập nhật
+          );
 
-        await HotelRoom.findByIdAndUpdate(
-          booking.hotelRoomId,
-          {
-            status: "Unavailable",
-          },
-          { new: true }
-        );
+          // BƯỚC 2: Kiểm tra xem booking có tồn tại và đã được cập nhật chưa.
+          if (!updatedBooking) {
+            console.error(
+              `Không tìm thấy booking với ID: ${dataJson["app_user"]} để cập nhật.`
+            );
+            // Có thể dừng lại hoặc xử lý lỗi ở đây
+            return;
+          }
 
+          // BƯỚC 3: Lấy lại booking với đầy đủ thông tin (Quan trọng nhất!).
+          // Sử dụng populate để lấy dữ liệu từ các model 'User' và 'HotelRoom' (bao gồm cả 'Hotel').
+          const detailedBooking = await BookingHotel.findById(
+            updatedBooking._id
+          )
+            .populate({
+              path: "userId",
+              select: "username email", // Chỉ lấy các trường cần thiết từ User
+            })
+            .populate({
+              path: "hotelRoomId",
+              select: "roomType hotelId", // Lấy các trường từ HotelRoom
+              populate: {
+                path: "hotelId",
+                model: "Hotel", // Giả sử bạn có model 'Hotel'
+                select: "name", // Lấy tên khách sạn
+              },
+            });
+
+          if (!detailedBooking) {
+            console.error(
+              `Không thể populate booking với ID: ${updatedBooking._id}.`
+            );
+            return;
+          }
+
+          // BƯỚC 4: Tạo đối tượng chi tiết để gửi mail từ dữ liệu đã populate.
+          const emailDetails = {
+            bookingId: detailedBooking._id.toString(),
+            userFullName: detailedBooking.fullName,
+            phoneNumber: detailedBooking.phoneNumber,
+            hotelName: detailedBooking.hotelRoomId.hotelId.name,
+            roomType: detailedBooking.hotelRoomId.roomType,
+            checkInDate: detailedBooking.checkInDate,
+            checkOutDate: detailedBooking.checkOutDate,
+            totalPrice: detailedBooking.totalPrice,
+          };
+
+          // BƯỚC 5: Gọi hàm gửi email với dữ liệu đã chuẩn bị.
+          // Lấy email từ thông tin user đã populate.
+          await sendHotelBookingConfirmationEmail(
+            detailedBooking.userId.email,
+            emailDetails
+          );
+        } catch (error) {
+          console.error(
+            "Đã xảy ra lỗi trong quá trình xác nhận và gửi email đặt phòng:",
+            error
+          );
+          // Xử lý lỗi chung
+        }
       } else if (type === "tourBooking") {
         booking = await Booking.findOneAndUpdate(
           { _id: dataJson["app_user"] },

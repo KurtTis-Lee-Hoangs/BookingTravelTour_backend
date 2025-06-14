@@ -8,72 +8,146 @@ export const createHotelBooking = async (req, res) => {
   try {
     const {
       userId,
+      fullName,
+      phoneNumber,
       hotelRoomId,
       checkInDate,
       checkOutDate,
       paymentMethod,
       totalPrice,
     } = req.body;
+    
+    // Chuyển đổi ngày tháng sang đối tượng Date để so sánh chính xác
+    const newCheckInDate = new Date(checkInDate);
+    const newCheckOutDate = new Date(checkOutDate);
 
-    // Check if the room is available
-    const room = await HotelRoom.findById(hotelRoomId);
-    if (!room || room.status !== "Available") {
-      return res.status(400).json({ message: "Room is not available" });
+    if (newCheckInDate >= newCheckOutDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Check-out date must be after check-in date.",
+      });
     }
 
-    // Calculate the total nights
-    const nights = Math.ceil(
-      (new Date(checkOutDate) - new Date(checkInDate)) / (1000 * 60 * 60 * 24)
-    );
+    // BƯỚC 1: KIỂM TRA XUNG ĐỘT THỜI GIAN ĐẶT PHÒNG
+    // Tìm một booking đã tồn tại cho cùng một phòng, đã thanh toán, chưa bị hủy và có ngày bị trùng.
+    const conflictingBooking = await BookingHotel.findOne({
+      hotelRoomId: hotelRoomId, // Cho cùng một phòng
+      isPayment: true,          // Đã được thanh toán
+      isDelete: false,          // Booking đó không bị hủy
+      $or: [ // Điều kiện thời gian trùng lặp
+        {
+          checkInDate: { $lt: newCheckOutDate },
+          checkOutDate: { $gt: newCheckInDate }
+        }
+      ]
+    });
 
-    // Create a new booking
+    // Nếu tìm thấy một booking bị trùng lặp, trả về lỗi
+    if (conflictingBooking) {
+      return res.status(400).json({
+        success: false,
+        message: "Room is booked for this date. Please choose another date.",
+      });
+    }
+
+    // BƯỚC 2: TẠO BOOKING MỚI (nếu không có xung đột)
+    // Đoạn code này chỉ chạy khi không có booking nào bị trùng
     const newBooking = new BookingHotel({
       hotelRoomId,
       userId,
-      checkInDate,
-      checkOutDate,
+      fullName,
+      phoneNumber,
+      checkInDate: newCheckInDate,
+      checkOutDate: newCheckOutDate,
       totalPrice,
       paymentMethod,
-      status: "Pending",
+      status: "Pending", // Trạng thái ban đầu
+      isPayment: false,  // Mặc định là chưa thanh toán khi mới tạo
+      isDelete: false,   // Mặc định là chưa xóa
     });
 
     await newBooking.save();
-    
-    // // Update the room status to "Unavailable" immediately after successful booking creation
-    // await HotelRoom.findByIdAndUpdate(hotelRoomId, { status: "Unavailable" });
 
+    // Xử lý thanh toán ZaloPay
     if (paymentMethod === "ZaloPay") {
       const paymentUrl = await payment(newBooking._id, "roomBooking");
       if (!paymentUrl) {
         return res.status(503).json({
           success: false,
-          message: "Payment creation failed.",
+          message: "Tạo thanh toán thất bại.",
         });
       }
 
-      // Return the payment URL for the frontend to handle redirection
       return res.status(200).json({
         success: true,
-        message: "Booking created successfully",
-        tour: newBooking,
+        message: "Booking tạo thành công, đang chờ thanh toán.",
+        booking: newBooking,
         paymentUrl: paymentUrl,
       });
     }
-
-    // Check if the payment has been made and update the room status accordingly
-    if (newBooking.isPayment) {
-      await HotelRoom.findByIdAndUpdate(hotelRoomId, { status: "Unavailable" });
-    }
+    
+    // Đối với các phương thức thanh toán khác (ví dụ: thanh toán tại quầy)
+    // Bạn sẽ cần một logic khác để cập nhật isPayment = true sau khi khách hàng thanh toán.
+    // Ví dụ: một API riêng cho nhân viên xác nhận thanh toán.
+    // Khi isPayment được cập nhật thành true, phòng sẽ chính thức bị khóa trong khoảng thời gian đó.
 
     res.status(200).json({
       success: true,
-      message: "Booking created successfully without online payment",
-      tour: newBooking,
+      message: "Booking được tạo thành công (thanh toán sau).",
+      booking: newBooking,
     });
+
   } catch (error) {
     res.status(500).json({ message: "Lỗi hệ thống", error: error.message });
   }
 };
+
+export const getBookedDatesForRoom = async (req, res) => {
+  try {
+    const { roomId } = req.params;
+
+    // Tìm tất cả các booking cho phòng này đã thanh toán và chưa bị hủy
+    const bookings = await BookingHotel.find({
+      hotelRoomId: roomId,
+      isPayment: true,
+      isDelete: false,
+    }).select("checkInDate checkOutDate"); // Chỉ lấy 2 trường cần thiết
+
+    if (!bookings || bookings.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "Không có ngày nào được đặt cho phòng này.",
+        data: [],
+      });
+    }
+
+    // Tạo một danh sách tất cả các ngày đã bị chiếm
+    const bookedDates = [];
+    bookings.forEach(booking => {
+      let currentDate = new Date(booking.checkInDate);
+      const endDate = new Date(booking.checkOutDate);
+
+      // Lặp từ ngày check-in đến TRƯỚC ngày check-out
+      // Vì ngày check-out khách đã trả phòng và phòng trống cho người tiếp theo
+      while (currentDate < endDate) {
+        bookedDates.push(currentDate.toISOString().split("T")[0]);
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: bookedDates,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Không thể lấy danh sách ngày đã đặt.",
+      error: error.message,
+    });
+  }
+};  
 
 // Xem danh sách phòng đã đặt
 export const getUserBookings = async (req, res) => {

@@ -124,9 +124,8 @@ export const getTourByKeywords = async (keywords, res) => {
     const searchCriteria = { isDelete: false };
 
     if (keywords.cities && keywords.cities.length > 0) {
-      // Dùng $in để tìm các tour có thành phố NẰM TRONG danh sách các thành phố đã chuẩn hóa
-      // Hoặc nếu bạn muốn tìm bất kỳ tour nào chứa MỘT TRONG CÁC thành phố
-      searchCriteria.city = { $in: keywords.cities.map(city => new RegExp(city, 'i')) };
+      // Sửa lại: tìm city chứa bất kỳ tên thành phố nào (không cần phải khớp hoàn toàn)
+      searchCriteria.city = { $regex: keywords.cities.join("|"), $options: "i" };
     }
     if (keywords.day) {
       searchCriteria.day = { $eq: parseInt(keywords.day) };

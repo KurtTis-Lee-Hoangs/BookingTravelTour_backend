@@ -239,7 +239,7 @@ export const googleLogin = async (req, res) => {
     let user = await User.findOne({ email });
 
     if (!user) {
-      user = await User.create({ googleId, username, email, avatar });
+      user = await User.create({ googleId, username, email, avatar, isActive: true });
     }
 
     const token = jwt.sign(
