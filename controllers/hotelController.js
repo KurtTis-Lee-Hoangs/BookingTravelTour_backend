@@ -376,3 +376,83 @@ export const getAllBookingHotel = async (req, res) => {
     });
   }
 };
+
+export const getTotalAllBookingHotel = async (req, res) => {
+  try {
+    const bookHotelAll = await BookingHotel.find({ isPayment: true }).populate("hotelRoomId");
+
+    res.status(200).json({
+      success: true,
+      message: "Get paid bookings successfully",
+      count: bookHotelAll.length,
+      data: bookHotelAll,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Get all paid bookings failed. Not found booking",
+    });
+  }
+};
+
+// Update a booking
+export const updateBookingHotel = async (req, res) => {
+  const bookingId = req.params.id;
+
+  try {
+    const updatedBooking = await BookingHotel.findByIdAndUpdate(
+      bookingId,
+      { $set: req.body },
+      { new: true } // return the updated document
+    );
+
+    if (!updatedBooking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Booking updated successfully",
+      data: updatedBooking,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update booking",
+    });
+  }
+};
+
+// Soft delete a booking (update isDelete to true)
+export const deleteBookingHotel = async (req, res) => {
+  const bookingId = req.params.id;
+
+  try {
+    const deletedBooking = await BookingHotel.findByIdAndUpdate(
+      bookingId,
+      { isDelete: true },
+      { new: true }
+    );
+
+    if (!deletedBooking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Booking deleted (soft delete) successfully",
+      data: deletedBooking,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete booking",
+    });
+  }
+};

@@ -13,6 +13,9 @@ import {
   updateHotelRoom,
   getUserBookings,
   getAllBookingHotel,
+  getTotalAllBookingHotel,
+  updateBookingHotel,
+  deleteBookingHotel
 } from "../controllers/hotelController.js";
 
 import {
@@ -44,5 +47,8 @@ router.delete("/rooms/:id", verifyAdmin, deleteHotelRoom);
 router.get("/user/getUserBookings", verifyUser, getUserBookings);
 
 router.get("/admin/getAllBookingHotel", verifyAdmin, getAllBookingHotel);
+router.get("/admin/getTotalAllBookingHotel", verifyAdmin, getTotalAllBookingHotel);
+router.put("/admin/updateBookingHotel/:id", verifyAdmin, updateBookingHotel);
+router.delete("/admin/deleteBookingHotel/:id", verifyAdmin, deleteBookingHotel);
 
 export default router;
