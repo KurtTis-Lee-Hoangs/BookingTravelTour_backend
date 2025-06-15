@@ -1,5 +1,5 @@
 import Booking from "../models/Booking.js";
-import { sendPaymentConfirmationEmail, sendBookingRequestToStaff, sendBookingConfirmedEmail } from "../utils/sendEmail.js";
+import { sendBookingCancelledEmail, sendBookingRequestToStaff, sendBookingConfirmedEmail } from "../utils/sendEmail.js";
 import { payment } from "./paymentController.js";
 
 // Create new booking
@@ -218,39 +218,44 @@ export const confirmBooking = async (req, res) => {
   }
 }
 
-export const getBookingCountByTour = async (req, res) => {
-  // Lấy tourId từ URL parameters. Tên 'id' phải khớp với tên bạn đặt trong file route
-  const tourId = req.params.id;
+export const cancelBooking = async (req, res) => {
+  const bookingId = req.params.id;
 
   try {
-    // 1. Tìm tất cả các document booking có tourId tương ứng
-    const bookings = await Booking.find({ tourId: tourId, isDelete: false }); 
+    // Tìm booking theo ID và cập nhật trạng thái thành 'Canceled'
+    const cancelledBooking = await Booking.findByIdAndUpdate(
+      bookingId,
+      { status: "Canceled" }, // <-- THAY ĐỔI CHÍNH
+      { new: true }
+    );
 
-    if (!bookings) {
-      // Trường hợp không tìm thấy booking nào, trả về 0
-      return res.status(200).json({
-        success: true,
-        message: 'No bookings found for this tour.',
-        data: { totalGuests: 0 },
+    // Xử lý khi không tìm thấy booking, giữ nguyên
+    if (!cancelledBooking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
       });
     }
 
-    // 2. Tính tổng số khách từ tất cả các booking tìm được
-    // Sử dụng hàm reduce để cộng dồn giá trị guestSize
-    const totalGuests = bookings.reduce((acc, booking) => acc + booking.guestSize, 0);
+    // ---- BỎ HOÀN TOÀN LOGIC TẠO THANH TOÁN ----
+    // const paymentUrl = await payment(...) // <= ĐÃ XÓA
+    
+    // Gửi email thông báo đã hủy booking cho người dùng
+    // Lưu ý: Bạn sẽ cần tạo một hàm mới tên là sendBookingCancelledEmail
+    await sendBookingCancelledEmail(cancelledBooking); 
 
-    // 3. Trả về kết quả thành công cùng với tổng số khách
+    // Trả về phản hồi thành công
     res.status(200).json({
       success: true,
-      message: 'Successfully calculated total guests.',
-      data: { totalGuests }, // Frontend sẽ nhận được { "data": { "totalGuests": 15 } }
+      message: "Booking cancelled successfully", // <-- Cập nhật tin nhắn
+      data: cancelledBooking, // Trả về dữ liệu booking đã được hủy
     });
 
   } catch (err) {
-    // Bắt lỗi và trả về thông báo lỗi
     res.status(500).json({
       success: false,
-      message: 'Failed to calculate total guests. ' + err.message,
+      message: "Failed to cancel booking. Try again", // <-- Cập nhật tin nhắn lỗi
+      error: err.message,
     });
   }
 };

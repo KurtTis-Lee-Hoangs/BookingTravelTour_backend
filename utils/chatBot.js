@@ -22,6 +22,7 @@ const cityList = [
   { name: "Indonesia", aliases: ["indo"] },
   { name: "Hồ Chí Minh", aliases: ["hcm"] },
   { name: "Huế", aliases: ["hue"] },
+  { name: "Đà Lạt", aliases: ["da lat"] },
 ];
 
 const findCanonicalCity = (text) => {
@@ -72,23 +73,24 @@ export const getAiAnalysis = async (history, query) => {
       Chỉ trả về object JSON.
     `;
 
-    // Gemini 2.5 Flash hỗ trợ Multi-turn conversations,
-    // nên bạn có thể gửi history trực tiếp thay vì ghép vào prompt.
-    // Tuy nhiên, nếu bạn muốn AI phân tích intent dựa trên prompt cố định,
-    // giữ nguyên cách này cũng được.
-    // Đối với mô hình này, việc gửi cả history và prompt có thể làm tăng token count.
-    // Tùy chọn 1: Gửi history và user query riêng biệt
     const contents = [
-      ...history.map(msg => ({ role: msg.role, parts: msg.parts })), // Đảm bảo cấu trúc parts
-      { role: "user", parts: [{ text: prompt }] } // Prompt là user message cuối cùng
+      ...history.map(msg => ({
+        role: msg.role,
+        // *** Chỉ giữ lại các thuộc tính mà Gemini API mong đợi, bỏ qua `isHtml` ***
+        parts: msg.parts.map(part => {
+          if (part.text) return { text: part.text };
+          if (part.inlineData) return { inlineData: part.inlineData };
+          return {}; // Trả về object rỗng nếu không có text hay inlineData
+        })
+      })),
+      { role: "user", parts: [{ text: prompt }] }
     ];
 
     const response = await axios.post(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
-        contents: contents, // Sử dụng contents đã chuẩn bị
+        contents: contents,
         generationConfig: { responseMimeType: "application/json" },
-        // stream: false // Mặc định là false, nhưng có thể thêm vào cho rõ ràng
       },
       { params: { key: apiKey } }
     );
@@ -96,7 +98,6 @@ export const getAiAnalysis = async (history, query) => {
     const rawResponseText = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
     console.log("Raw AI Response Text:", rawResponseText);
 
-    // Xử lý trường hợp Gemini trả về text không phải JSON hoặc JSON bị bọc trong markdown
     let analysisResult;
     try {
       if (rawResponseText.startsWith('```json') && rawResponseText.endsWith('```')) {
@@ -106,7 +107,6 @@ export const getAiAnalysis = async (history, query) => {
       }
     } catch (parseError) {
       console.error("Lỗi khi parse JSON từ AI:", parseError.message);
-      // Fallback nếu không parse được JSON
       return { intent: 'GENERAL', keywords: null };
     }
 
@@ -124,7 +124,6 @@ export const getTourByKeywords = async (keywords, res) => {
     const searchCriteria = { isDelete: false };
 
     if (keywords.cities && keywords.cities.length > 0) {
-      // Sửa lại: tìm city chứa bất kỳ tên thành phố nào (không cần phải khớp hoàn toàn)
       searchCriteria.city = { $regex: keywords.cities.join("|"), $options: "i" };
     }
     if (keywords.day) {
@@ -269,7 +268,7 @@ export const handleChatRequest = async (req, res) => {
     const analysis = await getAiAnalysis(filteredHistory, query);
 
     if (analysis.intent === 'TOUR' && analysis.keywords) {
-      console.log("-> Luồng: Xử lý Tour");
+      console.log("-> Luồng: Xử lý Tour");  
 
       const keywordsFromAI = analysis.keywords;
       let normalizedCities = [];

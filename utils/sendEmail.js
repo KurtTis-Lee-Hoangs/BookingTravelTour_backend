@@ -175,7 +175,7 @@ export const sendHotelBookingConfirmationEmail = async (userEmail, bookingDetail
 
   // 4. Tạo nội dung email với template dành cho khách sạn
   const mailOptions = {
-    from: `"Travel Company" <${process.env.GMAIL_USER}>`, // Hiển thị tên công ty
+    from: `"TisTrips" <${process.env.GMAIL_USER}>`, // Hiển thị tên công ty
     to: userEmail,
     subject: `✅ Xác nhận Đặt phòng Thành công tại ${hotelName} - Mã #${bookingId}`,
     html: `
@@ -265,7 +265,7 @@ export const sendBookingRequestToStaff = async (requestDetails) => {
 
   // 2. TẠO NỘI DUNG EMAIL GỬI ĐẾN NHÂN VIÊN
   const mailOptions = {
-    from: `"Hệ thống TravelWorld" <${process.env.GMAIL_USER}>`,
+    from: `"Hệ thống TisTrips" <${process.env.GMAIL_USER}>`,
     to: "nhanhuynhly244@gmail.com", // << EMAIL CỦA NHÂN VIÊN
     subject: `🔔 Yêu cầu Đặt Tour Mới: Khách hàng quan tâm tour "${tourName}"`, // Tiêu đề email cho nhân viên
     html: `
@@ -342,7 +342,7 @@ export const sendBookingConfirmedEmail = async (bookingDetails, paymentUrl) => {
 
   // 2. TẠO NỘI DUNG EMAIL
   const mailOptions = {
-    from: `"TravelWorld" <${process.env.GMAIL_USER}>`,
+    from: `"TisTrips" <${process.env.GMAIL_USER}>`,
     to: userEmail,
     subject: `Yêu cầu đặt tour của bạn đã được xác nhận!`,
     html: `
@@ -380,7 +380,7 @@ export const sendBookingConfirmedEmail = async (bookingDetails, paymentUrl) => {
         </div>
         
         <div style="text-align: center; margin-top: 30px; border-top: 1px solid #e0e0e0; padding-top: 20px;">
-          <p style="font-size: 14px; color: #777;">Trân trọng,<br>Đội ngũ TravelWorld</p>
+          <p style="font-size: 14px; color: #777;">Trân trọng,<br>Đội ngũ TisTrips</p>
         </div>
       </div>
     `,
@@ -394,5 +394,79 @@ export const sendBookingConfirmedEmail = async (bookingDetails, paymentUrl) => {
     console.error("Lỗi khi gửi email xác nhận cho khách hàng:", error);
     // Không throw lỗi ở đây để không làm gián đoạn luồng chính trả về URL cho frontend
     // Việc gửi email thất bại sẽ được ghi nhận ở log để xử lý sau.
+  }
+};
+
+export const sendBookingCancelledEmail = async (bookingDetails) => {
+  // Destructure các thông tin cần thiết, không cần paymentUrl
+  const { userEmail, fullName, tourName, guestSize, totalPrice, bookAt } = bookingDetails;
+
+  // Định dạng ngày và tiền tệ cho đẹp, vẫn giữ lại để người dùng biết họ đã hủy tour nào
+  const formattedBookAt = new Date(bookAt).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  const formattedTotalPrice = totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+
+  // 1. TẠO TRANSPORTER (Giữ nguyên)
+  const transporter = nodemailer.createTransport({
+    service: "Gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_PASS,
+    },
+  });
+
+  // 2. TẠO NỘI DUNG EMAIL ĐÃ CHỈNH SỬA
+  const mailOptions = {
+    from: `"TisTrips" <${process.env.GMAIL_USER}>`,
+    to: userEmail,
+    subject: `Thông báo: Tour "${tourName}" của bạn đã được hủy`, // <-- THAY ĐỔI TIÊU ĐỀ
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <div style="text-align: center; border-bottom: 2px solid #dc3545; padding-bottom: 10px; margin-bottom: 20px;">
+          <h1 style="color: #dc3545; margin: 0;">Tour đã được hủy</h1> 
+        </div>
+        
+        <p style="font-size: 16px;">Xin chào <strong style="color: #333;">${fullName}</strong>,</p>
+        <p style="font-size: 16px;">Chúng tôi rất tiếc phải thông báo rằng tour <strong>"${tourName}"</strong> của bạn đã được hủy theo yêu cầu. Dưới đây là thông tin chi tiết về booking đã được hủy:</p>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+          <tr style="background-color: #f9f9f9;">
+            <td style="padding: 12px; border: 1px solid #e0e0e0; font-weight: bold; width: 35%;">Tên tour</td>
+            <td style="padding: 12px; border: 1px solid #e0e0e0;">${tourName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e0e0e0; font-weight: bold;">Số lượng khách</td>
+            <td style="padding: 12px; border: 1px solid #e0e0e0;">${guestSize}</td>
+          </tr>
+          <tr>
+            <td style="padding: 12px; border: 1px solid #e0e0e0; font-weight: bold;">Ngày đi</td>
+            <td style="padding: 12px; border: 1px solid #e0e0e0;">${formattedBookAt}</td>
+          </tr>
+          <tr style="background-color: #f9f9f9;">
+            <td style="padding: 12px; border: 1px solid #e0e0e0; font-weight: bold;">Tổng chi phí</td>
+            <td style="padding: 12px; border: 1px solid #e0e0e0; font-weight: bold;">${formattedTotalPrice}</td>
+          </tr>
+        </table>
+        
+        <div style="text-align: center; margin-top: 30px;">
+          <p style="font-size: 16px; margin-top: 20px;">Bạn không cần thực hiện thêm hành động nào. Nếu bạn có bất kỳ thắc mắc nào hoặc muốn đặt lại tour, xin vui lòng liên hệ với chúng tôi.</p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; border-top: 1px solid #e0e0e0; padding-top: 20px;">
+          <p style="font-size: 14px; color: #777;">Trân trọng,<br>Đội ngũ TisTrips</p>
+        </div>
+      </div>
+    `,
+  };
+  
+  // 3. GỬI MAIL (Cập nhật log message)
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Email thông báo HỦY tour đã gửi tới ${userEmail}!`);
+  } catch (error) {
+    console.error("Lỗi khi gửi email HỦY tour cho khách hàng:", error);
   }
 };

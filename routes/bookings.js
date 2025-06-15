@@ -5,17 +5,18 @@ import {
   getBooking,
   getAllBooking,
   getUserBookings,
-  getBookingCountByTour,
   createNotification,
   confirmBooking,
+  cancelBooking
 } from "../controllers/bookingController.js";
 import { verifyUser, verifyAdmin } from "../utils/verifyToken.js";
 import { callback } from "../controllers/paymentController.js";
 import { getBookedDatesForRoom } from "../controllers/hotelController.js";
 const router = express.Router();
 
-router.post("/", confirmBooking);
+router.post("/:id/confirm", confirmBooking);
 router.post("/sendNotification", createNotification);
+router.post("/:id/cancel", verifyUser, cancelBooking);
 // update a booking
 router.put("/:id", verifyAdmin, updateBooking);
 
@@ -28,6 +29,5 @@ router.get("/user/history", verifyUser, getUserBookings);
 router.post("/callback", callback);
 
 router.get("/room/:roomId/booked-dates", getBookedDatesForRoom);
-router.get("/count-by-tour/:id", getBookingCountByTour);
 
 export default router;

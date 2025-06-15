@@ -41,7 +41,7 @@ export const payment = async (orderId, type) => {
     description: `Payment for the order #${transID}`,
     bank_code: "",
     callback_url:
-      "https://f4e4-2402-800-62a6-d645-1e0-7009-3179-7139.ngrok-free.app/api/v1/bookings/callback",
+      "https://8eb2-2402-800-62b4-de12-f8e2-3989-4f60-efa4.ngrok-free.app/api/v1/bookings/callback",
   };
   const data =
     configPayment.app_id +
@@ -96,7 +96,7 @@ export const callback = async (req, res) => {
           // Chúng ta chỉ cần ID ở đây, không cần lấy lại toàn bộ document ngay.
           const updatedBooking = await BookingHotel.findByIdAndUpdate(
             dataJson["app_user"], // Đây là bookingId
-            { isPayment: true, status: "Confirmed" }, // Cập nhật cả status
+            { isPayment: true, status: "Completed" }, // Cập nhật cả status
             { new: true } // new: true để trả về document sau khi đã cập nhật
           );
 
@@ -163,7 +163,7 @@ export const callback = async (req, res) => {
       } else if (type === "tourBooking") {
         booking = await Booking.findOneAndUpdate(
           { _id: dataJson["app_user"] },
-          { isPayment: true },
+          { isPayment: true, status: "Completed" },
           { new: true }
         );
         try {
