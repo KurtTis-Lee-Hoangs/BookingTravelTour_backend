@@ -1,37 +1,9 @@
 import Booking from "../models/Booking.js";
-import { sendBookingCancelledEmail, sendBookingRequestToStaff, sendBookingConfirmedEmail } from "../utils/sendEmail.js";
+import { sendBookingCancelledEmail, sendBookingRequestToStaff, sendBookingConfirmedEmail, sendBookingReceiptToCustomer } from "../utils/sendEmail.js";
 import { payment } from "./paymentController.js";
 
 // Create new booking
 export const createNotification = async (req, res) => {
-  // const newBooking = new Booking(req.body);
-
-  // try {
-  //   const savedBooking = await newBooking.save();
-
-  //   // const paymentUrl = await payment(savedBooking._id);
-  //   const paymentUrl = await payment(savedBooking._id, "tourBooking");
-  //   if (!paymentUrl) {
-  //     return res.status(503).json({
-  //       success: false,
-  //       message: "Payment creation failed.",
-  //     });
-  //   }
-
-  //   // Trả về URL để frontend xử lý việc chuyển hướng
-  //   res.status(200).json({
-  //     success: true,
-  //     message: "Booking created successfully",
-  //     tour: savedBooking,
-  //     paymentUrl: paymentUrl,
-  //   });
-  // } catch (err) {
-  //   res.status(500).json({
-  //     success: false,
-  //     // message: err.message,
-  //     message: "Thông tin nhập vào đang bị sai",
-  //   });
-  // }
   const newBooking = new Booking(req.body);
   console.log(newBooking);
   try {
@@ -44,6 +16,16 @@ export const createNotification = async (req, res) => {
       travelDate: newBooking.bookAt,
       tourName: newBooking.tourName,
       userEmail: newBooking.userEmail,
+    });
+
+    await sendBookingReceiptToCustomer({
+      fullName: newBooking.fullName,
+      userEmail: newBooking.userEmail,
+      phone: newBooking.phone,
+      tourName: newBooking.tourName,
+      bookAt: newBooking.bookAt,
+      totalPrice: newBooking.totalPrice,
+      guestSize: newBooking.guestSize,
     });
 
     res.status(201).json({

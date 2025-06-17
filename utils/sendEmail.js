@@ -319,6 +319,102 @@ export const sendBookingRequestToStaff = async (requestDetails) => {
   }
 };
 
+export const sendBookingReceiptToCustomer = async (bookingDetails) => {
+  // Destructure các thông tin cần thiết
+  const { userEmail, fullName, phone, tourName, guestSize, totalPrice, bookAt } = bookingDetails;
+
+  // Định dạng ngày và tiền tệ
+  const formattedBookAt = new Date(bookAt).toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+  const formattedTotalPrice = totalPrice.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+  const currentYear = new Date().getFullYear();
+
+  // 1. TẠO TRANSPORTER
+  const transporter = nodemailer.createTransport({
+    service: "Gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_PASS,
+    },
+  });
+
+  // 2. TẠO NỘI DUNG EMAIL
+  const mailOptions = {
+    from: `"TipsTrips" <${process.env.GMAIL_USER}>`,
+    to: userEmail, // Gửi đến email của khách hàng
+    subject: `Xác nhận yêu cầu đặt tour tại TipsTrips (Chờ xử lý)`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <div style="text-align: center; border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-bottom: 20px;">
+          <h1 style="color: #007bff; margin: 0;">Yêu cầu của bạn đã được ghi nhận</h1>
+        </div>
+        
+        <p style="font-size: 16px;">Xin chào <strong style="color: #007bff;">${fullName}</strong>,</p>
+        <p style="font-size: 16px;">Cảm ơn bạn đã quan tâm và gửi yêu cầu đặt tour tại TipsTrips. Yêu cầu của bạn đã được hệ thống ghi nhận và đang chờ nhân viên của chúng tôi xử lý.</p>
+        <p style="font-size: 16px;">Nhân viên sẽ kiểm tra và gửi email xác nhận kèm theo hướng dẫn thanh toán cho bạn trong thời gian sớm nhất (thường trong vòng 24 giờ làm việc).</p>
+        
+        <h3 style="color: #333; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 25px;">Tóm tắt thông tin yêu cầu</h3>
+
+        <h4 style="color: #555;">Thông tin của bạn</h4>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+          <tr>
+            <td style="padding: 10px; border: 1px solid #e0e0e0; font-weight: bold; width: 35%;">Họ và tên:</td>
+            <td style="padding: 10px; border: 1px solid #e0e0e0;">${fullName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #e0e0e0; font-weight: bold;">Email:</td>
+            <td style="padding: 10px; border: 1px solid #e0e0e0;">${userEmail}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #e0e0e0; font-weight: bold;">Số điện thoại:</td>
+            <td style="padding: 10px; border: 1px solid #e0e0e0;">${phone}</td>
+          </tr>
+        </table>
+        
+        <h4 style="color: #555;">Thông tin tour đã đặt</h4>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr style="background-color: #f9f9f9;">
+            <td style="padding: 10px; border: 1px solid #e0e0e0; font-weight: bold; width: 35%;">Tên tour:</td>
+            <td style="padding: 10px; border: 1px solid #e0e0e0;"><strong>${tourName}</strong></td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #e0e0e0; font-weight: bold;">Ngày đi:</td>
+            <td style="padding: 10px; border: 1px solid #e0e0e0;">${formattedBookAt}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #e0e0e0; font-weight: bold;">Số lượng khách:</td>
+            <td style="padding: 10px; border: 1px solid #e0e0e0;">${guestSize}</td>
+          </tr>
+          <tr style="background-color: #f9f9f9;">
+            <td style="padding: 10px; border: 1px solid #e0e0e0; font-weight: bold;">Tổng chi phí dự kiến:</td>
+            <td style="padding: 10px; border: 1px solid #e0e0e0; color: #dc3545; font-weight: bold;">${formattedTotalPrice}</td>
+          </tr>
+        </table>
+
+        <div style="text-align: center; margin-top: 30px; border-top: 1px solid #e0e0e0; padding-top: 20px;">
+          <p style="font-size: 14px; color: #777;">Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ với chúng tôi.</p>
+        </div>
+        
+        <footer style="text-align: center; margin-top: 20px; font-size: 12px; color: #999;">
+          <p>© ${currentYear} TipsTrips. All rights reserved.</p>
+        </footer>
+      </div>
+    `,
+  };
+
+  // 3. GỬI MAIL
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Email biên nhận đã gửi thành công tới ${userEmail}!`);
+  } catch (error) {
+    console.error("Lỗi khi gửi email biên nhận cho khách hàng:", error);
+    // Không throw lỗi để không làm gián đoạn luồng chính
+  }
+};
+
 export const sendBookingConfirmedEmail = async (bookingDetails, paymentUrl) => {
   // Destructure các thông tin cần thiết
   const { userEmail, fullName, tourName, guestSize, totalPrice, bookAt } = bookingDetails;
