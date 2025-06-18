@@ -46,7 +46,7 @@ export const sendVerificationEmail = async (email, verificationLink) => {
     },
   });
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"Hệ thống TisTrips" <${process.env.GMAIL_USER}>`,
     to: email,
     subject: "Account Activation",
     html: `
@@ -85,7 +85,7 @@ export const sendPaymentConfirmationEmail = async (email, bookingDetails) => {
     },
   });
   const mailOptions = {
-    from: process.env.GMAIL_USER,
+    from: `"Hệ thống TisTrips" <${process.env.GMAIL_USER}>`,
     to: email,
     subject: "Xác nhận thanh toán thành công",
     html: `
@@ -175,7 +175,7 @@ export const sendHotelBookingConfirmationEmail = async (userEmail, bookingDetail
 
   // 4. Tạo nội dung email với template dành cho khách sạn
   const mailOptions = {
-    from: `"TisTrips" <${process.env.GMAIL_USER}>`, // Hiển thị tên công ty
+    from: `"Hệ thống TisTrips" <${process.env.GMAIL_USER}>`, // Hiển thị tên công ty
     to: userEmail,
     subject: `✅ Xác nhận Đặt phòng Thành công tại ${hotelName} - Mã #${bookingId}`,
     html: `
@@ -343,7 +343,7 @@ export const sendBookingReceiptToCustomer = async (bookingDetails) => {
 
   // 2. TẠO NỘI DUNG EMAIL
   const mailOptions = {
-    from: `"TipsTrips" <${process.env.GMAIL_USER}>`,
+    from: `"Hệ thống TisTrips" <${process.env.GMAIL_USER}>`,
     to: userEmail, // Gửi đến email của khách hàng
     subject: `Xác nhận yêu cầu đặt tour tại TipsTrips (Chờ xử lý)`,
     html: `
@@ -438,7 +438,7 @@ export const sendBookingConfirmedEmail = async (bookingDetails, paymentUrl) => {
 
   // 2. TẠO NỘI DUNG EMAIL
   const mailOptions = {
-    from: `"TisTrips" <${process.env.GMAIL_USER}>`,
+    from: `"Hệ thống TisTrips" <${process.env.GMAIL_USER}>`,
     to: userEmail,
     subject: `Yêu cầu đặt tour của bạn đã được xác nhận!`,
     html: `
@@ -516,7 +516,7 @@ export const sendBookingCancelledEmail = async (bookingDetails) => {
 
   // 2. TẠO NỘI DUNG EMAIL ĐÃ CHỈNH SỬA
   const mailOptions = {
-    from: `"TisTrips" <${process.env.GMAIL_USER}>`,
+    from: `"Hệ thống TisTrips" <${process.env.GMAIL_USER}>`,
     to: userEmail,
     subject: `Thông báo: Tour "${tourName}" của bạn đã được hủy`, // <-- THAY ĐỔI TIÊU ĐỀ
     html: `

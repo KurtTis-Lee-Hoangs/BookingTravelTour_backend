@@ -30,7 +30,7 @@ export const createNotification = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Booking created successfully",
+      message: "An email has been sent to the staff. Please wait for confirmation.",
       data: savedBooking,
     });
   } catch (err) {

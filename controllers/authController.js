@@ -160,7 +160,7 @@ export const login = async (req, res) => {
     if (user.isDelete) {
       return res.status(403).json({
         success: false,
-        message: "This account has been deleted",
+        message: "This account has been deleted. Please contact admin for more information.",
       });
     }
 
@@ -240,6 +240,13 @@ export const googleLogin = async (req, res) => {
 
     if (!user) {
       user = await User.create({ googleId, username, email, avatar, isActive: true });
+    }
+
+    if (user.isDelete) {
+      return res.status(403).json({
+        success: false,
+        message: "This account has been deleted. Please contact admin for more information.",
+      });
     }
 
     const token = jwt.sign(
