@@ -16,6 +16,7 @@ export const createNotification = async (req, res) => {
       travelDate: newBooking.bookAt,
       tourName: newBooking.tourName,
       userEmail: newBooking.userEmail,
+      guestSize: newBooking.guestSize,
     });
 
     await sendBookingReceiptToCustomer({

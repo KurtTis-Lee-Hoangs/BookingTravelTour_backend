@@ -245,7 +245,7 @@ export const sendHotelBookingConfirmationEmail = async (userEmail, bookingDetail
 
 export const sendBookingRequestToStaff = async (requestDetails) => {
   // Destructure các thông tin cần thiết
-  const { fullName, phone, travelDate, tourName, userEmail } = requestDetails;
+  const { fullName, phone, travelDate, tourName, userEmail, guestSize } = requestDetails;
 
   // Định dạng lại ngày đi cho dễ đọc
   const formattedTravelDate = new Date(travelDate).toLocaleDateString("vi-VN", {
@@ -301,6 +301,10 @@ export const sendBookingRequestToStaff = async (requestDetails) => {
           <tr>
             <td style="padding: 10px; border: 1px solid #e0e0e0; font-weight: bold;">Ngày đi mong muốn:</td>
             <td style="padding: 10px; border: 1px solid #e0e0e0;">${formattedTravelDate}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #e0e0e0; font-weight: bold;">Số lượng khách:</td>
+            <td style="padding: 10px; border: 1px solid #e0e0e0;">${guestSize}</td>
           </tr>
         </table>
         
